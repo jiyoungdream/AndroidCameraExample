@@ -194,7 +194,6 @@ public class MainActivity extends Activity {
                 Camera.Parameters params = camera.getParameters();
                 // picture image orientation
                 params.setRotation(setCameraDisplayOrientation(this, CAMERA_FACING, camera));
-
                 camera.startPreview();
                 Toast.makeText(this, "camera start", Toast.LENGTH_LONG).show();
 
