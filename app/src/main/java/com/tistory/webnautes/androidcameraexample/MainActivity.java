@@ -204,7 +204,6 @@ public class MainActivity extends Activity {
             }
         }
 
-
         preview.setCamera(camera);
     }
 
