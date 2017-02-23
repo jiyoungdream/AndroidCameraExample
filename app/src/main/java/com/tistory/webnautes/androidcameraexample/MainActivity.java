@@ -1,14 +1,5 @@
 package com.tistory.webnautes.androidcameraexample;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -16,31 +7,30 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.ShutterCallback;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnLongClickListener;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 
 
@@ -194,8 +184,16 @@ public class MainActivity extends Activity {
         int numCams = Camera.getNumberOfCameras();
         if (numCams > 0) {
             try {
-                camera = Camera.open(0);
-                camera.setDisplayOrientation(90);
+
+                // Camera.CameraInfo.CAMERA_FACING_FRONT or Camera.CameraInfo.CAMERA_FACING_BACK
+                int CAMERA_FACING = Camera.CameraInfo.CAMERA_FACING_BACK;
+                camera = Camera.open(CAMERA_FACING);
+                // camera orientation
+                camera.setDisplayOrientation(setCameraDisplayOrientation(this, CAMERA_FACING, camera));
+                // get Camera parameters
+                Camera.Parameters params = camera.getParameters();
+                // picture image orientation
+                params.setRotation(setCameraDisplayOrientation(this, CAMERA_FACING, camera));
 
                 camera.startPreview();
                 Toast.makeText(this, "camera start", Toast.LENGTH_LONG).show();
@@ -327,5 +325,40 @@ public class MainActivity extends Activity {
             return null;
         }
 
+    }
+
+    /**
+     *
+     * @param activity
+     * @param cameraId  Camera.CameraInfo.CAMERA_FACING_FRONT, Camera.CameraInfo.CAMERA_FACING_BACK
+     * @param camera
+     *
+     * Camera Orientation
+     * reference by https://developer.android.com/reference/android/hardware/Camera.html
+     */
+    public static int setCameraDisplayOrientation(Activity activity,
+                                                  int cameraId, android.hardware.Camera camera) {
+        android.hardware.Camera.CameraInfo info =
+                new android.hardware.Camera.CameraInfo();
+        android.hardware.Camera.getCameraInfo(cameraId, info);
+        int rotation = activity.getWindowManager().getDefaultDisplay()
+                .getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0: degrees = 0; break;
+            case Surface.ROTATION_90: degrees = 90; break;
+            case Surface.ROTATION_180: degrees = 180; break;
+            case Surface.ROTATION_270: degrees = 270; break;
+        }
+
+        int result;
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            result = (info.orientation + degrees) % 360;
+            result = (360 - result) % 360;  // compensate the mirror
+        } else {  // back-facing
+            result = (info.orientation - degrees + 360) % 360;
+        }
+
+        return result;
     }
 }
